@@ -36,6 +36,14 @@ def seed():
                              (code, start + timedelta(hours=hours), round(base + total * fraction, 3), f'{code}-GAS.csv'))
         counts = {name: conn.execute(f'SELECT count(*) AS n FROM {name}').fetchone()['n'] for name in
                   ('accounts', 'firing_batches', 'kiln_curve', 'gas_meter', 'recipe_changes', 'load_runs', 'cycle_reviews', 'ledger_audit')}
+        # 限气班次演示：覆盖 11-21 全天的燃气额度与 Y17 配方计划温程。
+        shift_start = datetime(2026, 11, 21, 6, tzinfo=SHOP_TZ)
+        conn.execute('''INSERT INTO gas_shifts(name,started_at,ended_at,quota_m3,created_by)
+            VALUES ('1121 白班限气',%s,%s,260.000,'firing') ON CONFLICT (name) DO NOTHING''',
+                     (shift_start, shift_start + timedelta(hours=10)))
+        conn.execute('''INSERT INTO firing_programs(recipe,version,ramp_peak_c,soak_peak_c,cool_peak_c,
+            ramp_share,soak_share,created_by) VALUES ('釉面砖 Y17',3,1050,1180,1000,0.3750,0.2500,'firing')
+            ON CONFLICT (recipe, version) DO NOTHING''')
         print('seed ledger', counts)
 
 

@@ -121,3 +121,21 @@ td small {font-size:.69rem}
 }
 @media(max-width:430px) { .coverage {grid-template-columns:1fr}.coverage > div+div {border-left:0;border-top:1px solid var(--rule)}.board {padding:.8rem}.form-grid {grid-template-columns:1fr} }
 @media(prefers-reduced-motion:reduce) {button {transition:none}button:hover:not(:disabled) {transform:none}}
+
+/* ---- 限气排程 ---- */
+.shift-desk {min-width:0;display:grid;gap:.9rem}
+.shift-rail .batch-pick {grid-template-columns:minmax(0,1fr) auto}
+.quota-card {border:1px solid var(--rule);background:oklch(94% .026 62);padding:.9rem 1rem}
+.quota-head {display:flex;justify-content:space-between;gap:.8rem;flex-wrap:wrap;margin-bottom:.6rem}
+.quota-head b {font:700 1.35rem/1 var(--numbers)}
+.quota-head span {color:var(--muted);font-size:var(--sm)}
+.quota-track {height:14px;background:oklch(89% .025 66);overflow:hidden}
+.quota-track i {display:block;height:100%;background:linear-gradient(90deg,var(--heat),var(--rust))}
+.quota-numbers {display:flex;gap:1.1rem;flex-wrap:wrap;margin-top:.55rem;font-size:var(--sm)}
+.quota-numbers strong {color:var(--rust);font:700 1.2rem/1 var(--numbers)}
+.plan-action {margin:.7rem 0}
+.plan-action button {min-width:200px}
+.plan-message {padding:.6rem .85rem;border-left:3px solid var(--rust);background:oklch(91% .048 45);color:var(--rust);font-size:var(--md);margin:.55rem 0}
+.plan-message[data-kind=success] {border-color:var(--green);color:var(--green);background:oklch(93% .034 139)}
+.shift-forms {display:grid;grid-template-columns:1fr 1fr;gap:.9rem}
+@media(max-width:1020px) { .shift-forms {grid-template-columns:1fr} }

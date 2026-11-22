@@ -29,6 +29,14 @@ async function request(path, method='GET', value) {
 export const signIn = (form) => request('/login', 'POST', form);
 export const batchAction = (path, form) => request(`/batches/${encodeURIComponent(state.code)}${path}`, 'POST', form);
 export const createBatch = (form) => request('/batches', 'POST', form);
+export const listShifts = () => request('/shifts');
+export const shiftDetail = (shiftId) => request(`/shifts/${shiftId}`);
+export const openShift = (form) => request('/shifts', 'POST', form);
+export const listPrograms = () => request('/firing-programs');
+export const openProgram = (form) => request('/firing-programs', 'POST', form);
+export const planShift = (shiftId, form) => request(`/shifts/${shiftId}/plan`, 'POST', form);
+export const releaseReservation = (shiftId, code) =>
+  request(`/shifts/${shiftId}/reservations/${encodeURIComponent(code)}/release`, 'POST', {});
 export async function refresh(code=state.code) {
   const batches = await request('/batches');
   const selected = batches.some((batch) => batch.code === code) ? code : batches[0]?.code;

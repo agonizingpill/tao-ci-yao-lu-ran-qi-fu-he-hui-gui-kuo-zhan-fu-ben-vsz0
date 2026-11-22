@@ -73,3 +73,37 @@ class ReviewPlan(BaseModel):
     next_minutes: int = Field(ge=30, le=1440)
     attribution: Literal['observed', 'recipe']
     rationale: Reason
+
+
+class GasShiftForm(BaseModel):
+    name: Label
+    started_at: AwareDatetime
+    ended_at: AwareDatetime
+    quota_m3: Decimal = Field(gt=0, max_digits=12, decimal_places=3)
+
+    @model_validator(mode='after')
+    def valid_window(self):
+        if self.ended_at <= self.started_at:
+            raise ValueError('班次结束时间必须晚于开始时间')
+        return self
+
+
+class FiringProgramForm(BaseModel):
+    recipe: Label
+    version: int = Field(ge=1, le=10000)
+    ramp_peak_c: Decimal = Field(ge=20, le=1500, max_digits=7, decimal_places=2)
+    soak_peak_c: Decimal = Field(ge=20, le=1500, max_digits=7, decimal_places=2)
+    cool_peak_c: Decimal = Field(ge=20, le=1500, max_digits=7, decimal_places=2)
+    ramp_share: Decimal = Field(ge=0.05, le=0.9, max_digits=5, decimal_places=4)
+    soak_share: Decimal = Field(ge=0.05, le=0.9, max_digits=5, decimal_places=4)
+
+    @model_validator(mode='after')
+    def shares_fit(self):
+        if self.ramp_share + self.soak_share >= 1:
+            raise ValueError('升温与保温占比之和必须小于 1，须留出冷却段')
+        return self
+
+
+class ShiftPlanForm(BaseModel):
+    request_key: Annotated[str, StringConstraints(strip_whitespace=True,
+                                                  pattern=r'^[A-Za-z0-9][A-Za-z0-9_-]{7,79}$')]

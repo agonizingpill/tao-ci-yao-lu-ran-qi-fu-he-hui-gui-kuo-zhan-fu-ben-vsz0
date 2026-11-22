@@ -5,7 +5,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from .operations_evidence import router as operations_evidence
-from . import ledger, reviews, schemas as forms
+from . import ledger, reviews, schemas as forms, shift_plan
 from .infra import allow, audit, connect, identity, publish_run, queue, token, verify_password
 
 app = FastAPI(title='陶瓷窑炉燃气负荷回归')
@@ -133,3 +133,63 @@ def propose(code: str, form: forms.ReviewPlan, actor=Depends(operator)):
 @app.post('/batches/{code}/review/confirm')
 def confirm(code: str, actor=Depends(supervisor)):
     return mutate(lambda conn: reviews.confirm_cycle(conn, code, actor), code, actor)
+
+
+# ---- 限气班次排单 -------------------------------------------------------
+
+@app.get('/shifts')
+def shifts(user=Depends(identity)):
+    with connect() as conn:
+        return shift_plan.list_shifts(conn)
+
+
+@app.get('/shifts/{shift_id}')
+def shift(shift_id: int, user=Depends(identity)):
+    with connect() as conn:
+        return shift_plan.shift_detail(conn, shift_id)
+
+
+@app.post('/shifts', status_code=201)
+def open_shift(form: forms.GasShiftForm, actor=Depends(operator)):
+    try:
+        with connect() as conn:
+            return shift_plan.create_shift(conn, form, actor)
+    except ledger.LedgerError as error:
+        with connect() as conn:
+            audit(conn, None, actor, 'rule_blocked', code=error.code, reason=error.message)
+        raise
+
+
+@app.get('/firing-programs')
+def programs(user=Depends(identity)):
+    with connect() as conn:
+        return shift_plan.list_programs(conn)
+
+
+@app.post('/firing-programs', status_code=201)
+def open_program(form: forms.FiringProgramForm, actor=Depends(operator)):
+    try:
+        with connect() as conn:
+            return shift_plan.create_program(conn, form, actor)
+    except ledger.LedgerError as error:
+        with connect() as conn:
+            audit(conn, None, actor, 'rule_blocked', code=error.code, reason=error.message)
+        raise
+
+
+@app.post('/shifts/{shift_id}/plan', status_code=201)
+def plan_shift(shift_id: int, form: forms.ShiftPlanForm, actor=Depends(operator)):
+    # 失败请求与审计已在保存点外提交，占额改动已回滚，重试不会重复扣气。
+    with connect() as conn:
+        return shift_plan.plan_shift(conn, shift_id, form, actor)
+
+
+@app.post('/shifts/{shift_id}/reservations/{code}/release')
+def release_reservation(shift_id: int, code: str, actor=Depends(operator)):
+    try:
+        with connect() as conn:
+            return shift_plan.release_reservation(conn, shift_id, code, actor)
+    except ledger.LedgerError as error:
+        with connect() as conn:
+            audit(conn, code, actor, 'rule_blocked', code=error.code, reason=error.message)
+        raise
